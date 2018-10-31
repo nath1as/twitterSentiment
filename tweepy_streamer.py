@@ -3,25 +3,55 @@ from tweepy import OAuthHandler
 from tweepy import Stream
 import twitter_credentials
 
-# replace async with async_ in the tweepy streaming.py library
 
+# # # # TWITTER STREAMER # # # #
+class TwitterStreamer():
+    """
+    Class for streaming and processing live tweets.
+    """
+    def __init__(self):
+        pass
+
+    def stream_tweets(self, fetched_tweets_filename, hash_tag_list):
+        # authetification and Twitter Streaming API
+        listener = StdOutListener(fetched_tweets_filename)
+        auth = OAuthHandler(twitter_credentials.CONSUMER_KEY,
+                            twitter_credentials.CONSUMER_SECRET)
+        auth.set_access_token(twitter_credentials.ACCESS_TOKEN,
+                              twitter_credentials.ACCESS_TOKEN_SECRET)
+        stream = Stream(auth, listener)
+
+        # filter Twitter Streams to capture data by  keywords:
+        stream.filter(track=hash_tag_list)
+
+
+# # # # TWITTER STREAM LISTENER # # # #
 class StdOutListener(StreamListener):
+    """
+    listener that just prints received tweets to stdout.
+    """
+    def __init__(self, fetched_tweets_filename):
+        self.fetched_tweets_filename = fetched_tweets_filename
+
     def on_data(self, data):
-        print(data)
+        try:
+            print(data)
+            with open(self.fetched_tweets_filename, 'a') as tf:
+                tf.write(data)
+            return True
+        except BaseException as e:
+            print("Error on_data %s" % str(e))
         return True
 
     def on_error(self, status):
         print(status)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
-    listener = StdOutListener()
-    auth = OAuthHandler(twitter_credentials.CONSUMER_KEY,
-                        twitter_credentials.CONSUMER_SECRET)
-    auth.set_access_token(twitter_credentials.ACCESS_TOKEN,
-                          twitter_credentials.ACCESS_TOKEN_SECRET)
+    # authenticate using config.py and connect to API
+    hash_tag_list = ["nihilism", "ontology", "epistemology", "metaphysics"]
+    fetched_tweets_filename = "tweets.json"
 
-    stream = Stream(auth, listener)
-
-    stream.filter(track=["nihilism", "ontology", "epistemology"])
+    twitter_streamer = TwitterStreamer()
+twitter_streamer.stream_tweets(fetched_tweets_filename, hash_tag_list)
